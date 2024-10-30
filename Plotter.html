@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Graficador de Derivadas Parciales</title>
+    <!-- Librería Plotly para gráficas -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <!-- Librería Math.js para cálculos matemáticos -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.0.1/math.min.js"></script>
+</head>
+
+<body>
+    <h1>Graficador de Derivadas Parciales</h1>
+
+    <label for="funcion">Función original (f(x, y)):</label>
+    <input type="text" id="funcion" placeholder="Ej: x^2 + y^2">
+    <br><br>
+
+    <label for="rangoX">Rango de x (mín y máx, separados por coma):</label>
+    <input type="text" id="rangoX" placeholder="-10,10">
+    <br><br>
+
+    <label for="rangoY">Rango de y (mín y máx, separados por coma):</label>
+    <input type="text" id="rangoY" placeholder="-10,10">
+    <br><br>
+
+    <button onclick="calcularYGraficar()">Graficar Función y Derivadas</button>
+
+    <div id="graficoOriginal" style="width: 600px; height: 400px;"></div>
+    <div id="graficoDerivadaX" style="width: 600px; height: 400px;"></div>
+    <div id="graficoDerivadaY" style="width: 600px; height: 400px;"></div>
+
+    <script>
+        // Función para graficar la ecuación original y sus derivadas parciales
+        function calcularYGraficar() {
+            let funcionInput = document.getElementById('funcion').value;
+
+            // Usamos math.js para compilar la función
+            let funcion = math.compile(funcionInput);
+
+            // Derivadas parciales con respecto a x e y
+            let derivadaX = math.derivative(funcionInput, 'x');
+            let derivadaY = math.derivative(funcionInput, 'y');
+
+            // Obtenemos el rango de x e y proporcionado por el usuario
+            let rangoX = document.getElementById('rangoX').value.split(',').map(Number);
+            let rangoY = document.getElementById('rangoY').value.split(',').map(Number);
+
+            let xMin = rangoX[0];
+            let xMax = rangoX[1];
+            let yMin = rangoY[0];
+            let yMax = rangoY[1];
+
+            // Generamos los valores para x, y y evaluamos la función y sus derivadas
+            let xValues = [];
+            let yValues = [];
+            let zOriginal = [];
+            let zDerivadaX = [];
+            let zDerivadaY = [];
+
+            // Evaluamos sobre la grilla de valores
+            for (let x = xMin; x <= xMax; x += 0.5) {
+                let zRowOriginal = [];
+                let zRowDerivadaX = [];
+                let zRowDerivadaY = [];
+
+                for (let y = yMin; y <= yMax; y += 0.5) {
+                    // Evaluamos la función original y las derivadas
+                    try {
+                        let zOriginalVal = funcion.evaluate({ x: x, y: y });
+                        let zDerivadaXVal = derivadaX.evaluate({ x: x, y: y });
+                        let zDerivadaYVal = derivadaY.evaluate({ x: x, y: y });
+
+                        zRowOriginal.push(zOriginalVal);
+                        zRowDerivadaX.push(zDerivadaXVal);
+                        zRowDerivadaY.push(zDerivadaYVal);
+                    } catch (err) {
+                        console.error(`Error al evaluar la función en (x=${x}, y=${y}):`, err);
+                        zRowOriginal.push(NaN);
+                        zRowDerivadaX.push(NaN);
+                        zRowDerivadaY.push(NaN);
+                    }
+                }
+
+                zOriginal.push(zRowOriginal);
+                zDerivadaX.push(zRowDerivadaX);
+                zDerivadaY.push(zRowDerivadaY);
+                xValues.push(x);
+            }
+
+            // Generar yValues como una grilla homogénea
+            for (let y = yMin; y <= yMax; y += 0.5) {
+                yValues.push(y);
+            }
+
+            // Graficar función original
+            Plotly.newPlot('graficoOriginal', [{
+                z: zOriginal,
+                x: xValues,
+                y: yValues,
+                type: 'surface',
+                colorscale: 'Viridis',
+                name: 'Función Original'
+            }], {
+                title: 'Función Original',
+                scene: { zaxis: { range: [-100, 100] } }
+            });
+
+            // Graficar derivada parcial con respecto a x
+            Plotly.newPlot('graficoDerivadaX', [{
+                z: zDerivadaX,
+                x: xValues,
+                y: yValues,
+                type: 'surface',
+                colorscale: 'Bluered',
+                name: 'Derivada parcial respecto a x'
+            }], {
+                title: 'Derivada Parcial f_x (x, y)',
+                scene: { zaxis: { range: [-100, 100] } }
+            });
+
+            // Graficar derivada parcial con respecto a y
+            Plotly.newPlot('graficoDerivadaY', [{
+                z: zDerivadaY,
+                x: xValues,
+                y: yValues,
+                type: 'surface',
+                colorscale: 'Electric',
+                name: 'Derivada parcial respecto a y'
+            }], {
+                title: 'Derivada Parcial f_y (x, y)',
+                scene: { zaxis: { range: [-100, 100] } }
+            });
+        }
+        
+    </script>
+</body>
+
+</html>
